@@ -19,8 +19,10 @@ open_ai_model <- 'text-embedding-ada-002' # state-of-the-art embeding model: htt
 
 
 # data
-data_path <- "data/filename.xlsx" # add here your local path to the data
+data_path <- "data/FINAL_MEAMdataforanalysis.xlsx" # add here your local path to the data
 data <- read_excel(data_path, sheet = "in")
+
+# TODO: fix error
 filtered_data <- data %>% filter(!is.na(description)) # filter out NAs
 
 # memory descriptions

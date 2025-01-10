@@ -21,30 +21,55 @@ dim(embeddings)  # check structure
 
 
 # set random seed reproducibility
-set.seed(2024) 
+set.seed(2025) 
 
 
 # set up config for UMAP 
 umap_config <- umap.defaults
+umap_config$random_state <- 2025  # Set the random seed for UMAP
 umap_config$n_neighbors <- 10  # Adjust for local/global balance
 umap_config$min_dist <- 0.1   # Adjust for compactness of clusters
 umap_config$n_components <- 2 # Reduce to 2 dimensions for clustering
 
 
 ################################################################################
-# CLUSTERING AND VISUALIZATION
+# UMAP (to reduce large number of emedding features)
 ################################################################################
-# Step 1: run UMAP for dimensionality reduction
+# Step 1: run UMAP for dimensional reduction
 umap_res <- umap(embeddings, config = umap_config)
 umap_data <- as.data.frame(umap_res$layout)
 colnames(umap_data) <- c("UMAP1", "UMAP2")
 head(umap_data)
 
 
-# Step 2: run clustering
-# TODO: find optimal number of clusters
+################################################################################
+# DETERMINE OPTIMAL NUMBER OF CLUSTERS
+################################################################################
+# Use silhouette score to find optimal clusters
+sil_scores <- numeric()
+for (k in 2:15) {
+  cluster <- kmeans(umap_data, centers = k, nstart = 50)
+  sil <- silhouette(cluster$cluster, dist(umap_data))
+  sil_scores[k] <- mean(sil[, 3])
+}
 
-k <- 12 # set number of clusters
+# Plot silhouette scores
+plot(2:15, sil_scores[2:15], type = "b", pch = 19, xlab = "Number of Clusters (k)",
+     ylab = "Average Silhouette Score", main = "Silhouette Method")
+
+# Choose the best k (e.g., highest silhouette score)
+best_k <- which.max(sil_scores)
+
+paste0("bests k = ", best_k,"; sil score = ", round(sil_scores[[best_k]],2)) 
+
+
+################################################################################
+# CLUSTERING
+################################################################################
+
+# Step 2: run clustering
+
+k <- 6 # 13 and 6 are very close to 0.4: I  choose 6
 
 
 # run k-means clustering
@@ -54,7 +79,8 @@ umap_data$cluster <- as.factor(cluster$cluster)
 # validate
 silhouette_score <- silhouette(cluster$cluster, dist(umap_data[, c("UMAP1", "UMAP2")]))
 mean_silhouette_score <- mean(silhouette_score[, 3])
-mean_silhouette_score # 0.35 (this is too low)
+mean_silhouette_score # 0.4 
+
 
 # add to original data
 memory_data_umap <- memory_data %>% select(description)
@@ -75,6 +101,10 @@ ggplot(memory_data_umap, aes(x = UMAP1, y = UMAP2, color = cluster)) +
     color = "Cluster"
   ) +
   theme_minimal()
+
+ggsave("figures/semantic_embedding_space.png", 
+       width = 8, height = 6, dpi = 300,
+       bg = "white")
 
 
 # interactive visualization with Plotly

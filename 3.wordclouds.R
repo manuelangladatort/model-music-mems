@@ -14,7 +14,7 @@ head(memory_data_umap)
 ################################################################################
 # WORD CLOUDS (TF-IDF)
 ################################################################################
-k = 12
+k = 6
 select_cluster = 1
 
 # Add cluster as document ID
@@ -85,3 +85,4 @@ for (i in 1:k) {
   # Remove the temporary HTML file (optional)
   file.remove(temp_html)
 }
+
